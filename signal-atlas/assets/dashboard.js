@@ -466,7 +466,8 @@
     chevron: '<path d="m7 10 5 5 5-5"/>',
     plus: '<path d="M5 12h14m-7-7v14"/>',
     minus: '<path d="M5 12h14"/>',
-    focus: '<path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/>',
+    expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
+    collapse: '<path d="M3 8h5V3m13 5h-5V3M8 21v-5H3m13 5v-5h5"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
     moon: '<path d="M20.5 14.5a9 9 0 0 1-11-11 9 9 0 1 0 11 11Z"/>',
     list: '<path d="M9 5h12M9 12h12M9 19h12"/><circle cx="4" cy="5" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="19" r="1"/>',
@@ -577,12 +578,107 @@
     return layer;
   }
 
+  // src/map-viewport.js
+  var BASE_ZOOM = 13;
+  var TILE_SIZE = 256;
+  var BASE_NORTHWEST = [5792, 3013];
+  var BASE_SOUTHEAST = [5795, 3016];
+  var WORLD_MIN_ZOOM = 2;
+  function streetBounds(map2) {
+    const corner = (tile) => map2.unproject(L.point(tile).multiplyBy(TILE_SIZE), BASE_ZOOM);
+    return L.latLngBounds(corner(BASE_NORTHWEST), corner(BASE_SOUTHEAST));
+  }
+  function zoomForExtent(view, extent, fill, snap) {
+    const ratioX = view.x / extent.x;
+    const ratioY = view.y / extent.y;
+    const zoom = BASE_ZOOM + Math.log2(fill ? Math.max(ratioX, ratioY) : Math.min(ratioX, ratioY));
+    const steps = fill ? Math.ceil(zoom / snap) : Math.floor(zoom / snap);
+    return Number((steps * snap).toFixed(2));
+  }
+  var MapViewport = class {
+    constructor(map2, image) {
+      this.map = map2;
+      const bounds = streetBounds(map2);
+      this.streetFrame = bounds.pad(-3e-3);
+      L.imageOverlay(image, bounds, { pane: "tilePane", alt: "Улицы, парки и реки Бишкека" }).addTo(
+        map2
+      );
+      this.tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
+      this.onlineInput = document.getElementById("online-map");
+      this.zoomIn = document.getElementById("zoom-in");
+      this.zoomOut = document.getElementById("zoom-out");
+      this.zoomIn.onclick = () => map2.zoomIn();
+      this.zoomOut.onclick = () => map2.zoomOut();
+      document.getElementById("fit-map").onclick = () => this.fitDistrict();
+      this.onlineInput.onchange = () => {
+        if (this.onlineInput.checked) this.tiles.addTo(map2);
+        else this.tiles.remove();
+        this.refresh();
+      };
+      map2.on("zoomend zoomlevelschange", () => this.updateButtons());
+      new ResizeObserver(() => this.refresh()).observe(map2.getContainer());
+    }
+    setDistrict({ south, west, north, east }) {
+      this.district = L.latLngBounds([south, west], [north, east]);
+      this.fitDistrict();
+    }
+    fitDistrict() {
+      this.setFrame(this.district);
+      this.map.fitBounds(this.district, { padding: [16, 16], maxZoom: 17, animate: false });
+    }
+    showArea(bounds) {
+      if (!this.frame.contains(bounds))
+        this.setFrame(
+          L.latLngBounds(this.district.getSouthWest(), this.district.getNorthEast()).extend(bounds)
+        );
+      this.map.fitBounds(bounds, { padding: [18, 18], animate: false });
+    }
+    setFrame(area) {
+      this.frame = this.streetFrame.contains(area) ? this.streetFrame : area.pad(0.35);
+      this.refresh();
+    }
+    refresh() {
+      if (!this.frame) return;
+      const map2 = this.map;
+      if (!map2.getContainer().clientWidth || !map2.getContainer().clientHeight) return;
+      map2.invalidateSize({ animate: false });
+      const size = map2.getSize();
+      const online = this.onlineInput.checked;
+      const hasStreets = this.frame === this.streetFrame;
+      const span = map2.project(this.frame.getSouthEast(), BASE_ZOOM).subtract(map2.project(this.frame.getNorthWest(), BASE_ZOOM));
+      const snap = L.Browser.any3d ? map2.options.zoomSnap : 1;
+      const minimum = online ? WORLD_MIN_ZOOM : zoomForExtent(size, span, hasStreets, snap);
+      const limits = online ? null : this.frame;
+      map2.setMinZoom(Math.min(map2.getMaxZoom(), Math.max(WORLD_MIN_ZOOM, minimum)));
+      if (map2.options.maxBounds !== limits) map2.setMaxBounds(limits);
+      if (limits && Number.isFinite(map2.getZoom())) map2.panInsideBounds(limits, { animate: false });
+      document.getElementById("schematic-note").hidden = online || hasStreets;
+      this.updateButtons();
+    }
+    updateButtons() {
+      const zoom = this.map.getZoom();
+      this.zoomIn.disabled = this.map.getMaxZoom() - zoom < 1e-6;
+      this.zoomOut.disabled = zoom - this.map.getMinZoom() < 1e-6;
+    }
+  };
+
   // src/map.js
   var statusText = { strong: "Сильный сигнал", medium: "Средний сигнал", weak: "Слабый сигнал" };
   var colors = { strong: "#49b488", medium: "#efbd55", weak: "#e77e70" };
   var latlng = (point) => [point.lat, point.lon];
   var outlineColors = { shared: "#42584b", best: "#1561a0", greedy: "#7d3495" };
   var get = (id) => document.getElementById(id);
+  function cellPopup(cell, coveringSites) {
+    const coverage = coveringSites?.length ? `Покрыта новой БС: ${coveringSites.map(escapeHtml).join(", ")}` : "Вне охвата выбранной пары";
+    return `<div class="cell-details">
+    <strong>${escapeHtml(cell.id)}</strong>
+    <div class="signal-reading"><i class="swatch ${cell.level}"></i>${statusText[cell.level]}</div>
+    <dl><dt>Медиана</dt><dd>${formatNumber(cell.rsrp)} дБм</dd>
+    <dt>Замеры</dt><dd>${formatNumber(cell.count)}</dd>
+    <dt>Центр</dt><dd>${cell.lat.toFixed(5)}, ${cell.lon.toFixed(5)}</dd></dl>
+    ${coveringSites ? `<div class="cell-coverage">${coverage}</div>` : ""}
+  </div>`;
+  }
   var CoverageMap = class {
     constructor() {
       this.map = L.map("map", {
@@ -591,6 +687,8 @@
         maxZoom: 19,
         zoomSnap: 0.1,
         zoomDelta: 0.75,
+        maxBoundsViscosity: 1,
+        bounceAtZoomLimits: false,
         preferCanvas: true,
         attributionControl: true
       });
@@ -599,20 +697,13 @@
       map2.attributionControl.addAttribution(
         '<a href="https://openfreemap.org/">OpenFreeMap</a> · <a href="https://openmaptiles.org/">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       );
-      const nw = map2.unproject([5792 * 256, 3013 * 256], 13), se = map2.unproject([5795 * 256, 3016 * 256], 13);
-      const base = JSON.parse(get("basemap-data").textContent);
-      L.imageOverlay(base, [nw, se], { pane: "tilePane", alt: "Улицы, парки и реки Бишкека" }).addTo(
-        map2
-      );
+      this.viewport = new MapViewport(map2, JSON.parse(get("basemap-data").textContent));
       map2.createPane("heatSurface").style.zIndex = 350;
       L.control.scale({ imperial: false, maxWidth: 95, position: "bottomleft" }).addTo(map2);
       this.surface = L.layerGroup().addTo(map2);
       this.markers = L.layerGroup().addTo(map2);
       this.shapes = /* @__PURE__ */ new Map();
       this.mode = "grid";
-      get("zoom-in").onclick = () => map2.zoomIn();
-      get("zoom-out").onclick = () => map2.zoomOut();
-      get("fit-map").onclick = () => this.fit();
       const menu = get("layer-menu"), toggle = get("toggle-layers");
       const closeMenu = () => {
         menu.hidden = true;
@@ -632,19 +723,10 @@
         }
       });
       menu.onchange = (event) => {
+        if (event.target.id === "online-map") return;
         if (event.target.id === "layer-radius") this.drawSurface();
         this.drawMarkers();
       };
-      const online = document.createElement("label");
-      online.innerHTML = '<input type="checkbox" id="online-map">Онлайн-подложка OSM';
-      menu.append(online);
-      const onlineTiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        maxNativeZoom: 19
-      });
-      get("online-map").onchange = (e) => e.target.checked ? onlineTiles.addTo(map2) : onlineTiles.remove();
-      const resize = new ResizeObserver(() => map2.invalidateSize());
-      resize.observe(get("map"));
     }
     setData(data2, period2, algorithm2, coverage, refit = false) {
       this.data = data2;
@@ -653,19 +735,9 @@
       this.algorithm = algorithm2;
       this.coverage = coverage;
       this.grid = gridFor(data2.bounds);
-      if (refit) this.fit();
+      if (refit) this.viewport.setDistrict(data2.bounds);
       this.drawSurface();
       this.drawMarkers();
-    }
-    fit() {
-      const { south, west, north, east } = this.data.bounds;
-      this.map.invalidateSize().fitBounds(
-        [
-          [south, west],
-          [north, east]
-        ],
-        { padding: [16, 16], maxZoom: 17, animate: false }
-      );
     }
     setMode(mode2) {
       this.mode = mode2;
@@ -708,11 +780,7 @@
           fillColor: colors[c.level],
           fillOpacity: heat ? 0 : 0.63
         });
-        const coveringSites = hit?.[this.algorithm] || [];
-        const coverageText = coveringSites.length ? "Покрыта новой БС: " + coveringSites.map(escapeHtml).join(", ") : "Вне охвата выбранной пары";
-        shape.bindPopup(`<strong>${escapeHtml(c.id)}</strong>${statusText[c.level]} · ${formatNumber(c.rsrp)} дБм
-        <br>Замеров: ${c.count}<br>Центр: ${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}
-        ${showCoverage && hit ? `<br>${coverageText}` : ""}`);
+        shape.bindPopup(cellPopup(c, showCoverage ? hit?.[this.algorithm] : void 0));
         this.shapes.set(c.id, shape);
         this.surface.addLayer(shape);
       }
@@ -804,7 +872,7 @@
       );
       const extent = L.latLngBounds([]);
       for (const c of points) extent.extend(L.latLng(latlng(c)).toBounds(2 * COVERAGE_RADIUS_M));
-      if (extent.isValid()) this.map.fitBounds(extent, { padding: [18, 18], animate: false });
+      if (extent.isValid()) this.viewport.showArea(extent);
     }
   };
 
@@ -908,22 +976,26 @@
   }
   var heading = (pic, title) => `<div class="detail-head"><i>${icon(pic)}</i><h2>${title}</h2></div>`;
   var stat = (label, value) => `<div class="stat-line"><span>${label}</span><b>${value}</b></div>`;
-  function dayRow(period2, data2) {
-    const { cells, counts, samples } = data2.periods[period2];
-    const isDay = period2 === "day";
+  function signalDistribution({ cells, counts }) {
+    if (!cells.length) return '<p class="muted">Нет ячеек с пятью замерами за этот период.</p>';
     const bars = Object.keys(levels).map(
       (level) => `<span class="${level}" style="width:${100 * counts[level] / (cells.length || 1)}%"></span>`
     );
     const legend = Object.entries(levels).map(
       ([level, label]) => `<span><b class="swatch ${level}"></b>${label} ${counts[level]}</span>`
     );
+    return `<div class="daybars" aria-hidden="true">${bars.join("")}</div>
+    <div class="breakdown">${legend.join("")}</div>`;
+  }
+  function dayRow(period2, data2) {
+    const summary = data2.periods[period2];
+    const isDay = period2 === "day";
     return `<div class="compare-row">
     <div class="period-title">
       <strong class="inline">${icon(isDay ? "sun" : "moon", 16)}${periods[period2]}</strong>
-      <small>${isDay ? "06:00–17:59" : "18:00–05:59"} · ${formatNumber(samples)} замеров</small>
+      <small>${isDay ? "06:00–17:59" : "18:00–05:59"} · ${formatNumber(summary.samples)} замеров</small>
     </div>
-    <div class="daybars">${bars.join("")}</div>
-    <div class="breakdown">${legend.join("")}</div>
+    ${signalDistribution(summary)}
   </div>`;
   }
   function analytics(data2) {
@@ -1020,6 +1092,30 @@
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 3e4);
   }
+  function setupExpandedMap() {
+    const panel = get2("map-card");
+    const home = panel.parentElement;
+    const dialog = get2("map-dialog");
+    const button = get2("fullscreen-map");
+    function updateButton(expanded) {
+      button.setAttribute("aria-pressed", String(expanded));
+      button.title = expanded ? "Выйти из полного экрана" : "Карта на весь экран";
+      button.setAttribute("aria-label", button.title);
+      button.innerHTML = icon(expanded ? "collapse" : "expand");
+      button.focus({ preventScroll: true });
+    }
+    button.addEventListener("click", () => {
+      if (dialog.open) return dialog.close();
+      dialog.append(panel);
+      dialog.showModal();
+      updateButton(true);
+    });
+    dialog.addEventListener("close", () => {
+      home.prepend(panel);
+      updateButton(false);
+    });
+  }
+  setupExpandedMap();
   function exportMap() {
     const page = original.cloneNode(true);
     page.querySelector("#initial-data").textContent = JSON.stringify({ data, source }).replace(
@@ -1037,6 +1133,7 @@
       (button) => button.setAttribute("aria-pressed", String(button.dataset.algorithm === algorithm))
     );
     get2("worst").innerHTML = ranking(summary);
+    get2("distribution").innerHTML = signalDistribution(summary);
     get2("show-pair")?.addEventListener("click", () => map.showPair());
     get2("worst").querySelectorAll("[data-cell]").forEach((button) => button.onclick = () => map.focusCell(button.dataset.cell));
     get2("period").value = period;

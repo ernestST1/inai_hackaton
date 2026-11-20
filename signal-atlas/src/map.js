@@ -3,12 +3,27 @@ import { MIN_TOWER_DISTANCE_M } from './planning.js';
 import { icon } from './icons.js';
 import { escapeHtml, formatNumber } from './format.js';
 import { heatOverlays } from './heat.js';
+import { MapViewport } from './map-viewport.js';
 
 const statusText = { strong: 'Сильный сигнал', medium: 'Средний сигнал', weak: 'Слабый сигнал' };
 const colors = { strong: '#49b488', medium: '#efbd55', weak: '#e77e70' };
 const latlng = (point) => [point.lat, point.lon];
 const outlineColors = { shared: '#42584b', best: '#1561a0', greedy: '#7d3495' };
 const get = (id) => document.getElementById(id);
+
+function cellPopup(cell, coveringSites) {
+  const coverage = coveringSites?.length
+    ? `Покрыта новой БС: ${coveringSites.map(escapeHtml).join(', ')}`
+    : 'Вне охвата выбранной пары';
+  return `<div class="cell-details">
+    <strong>${escapeHtml(cell.id)}</strong>
+    <div class="signal-reading"><i class="swatch ${cell.level}"></i>${statusText[cell.level]}</div>
+    <dl><dt>Медиана</dt><dd>${formatNumber(cell.rsrp)} дБм</dd>
+    <dt>Замеры</dt><dd>${formatNumber(cell.count)}</dd>
+    <dt>Центр</dt><dd>${cell.lat.toFixed(5)}, ${cell.lon.toFixed(5)}</dd></dl>
+    ${coveringSites ? `<div class="cell-coverage">${coverage}</div>` : ''}
+  </div>`;
+}
 
 export class CoverageMap {
   constructor() {
@@ -18,6 +33,8 @@ export class CoverageMap {
       maxZoom: 19,
       zoomSnap: 0.1,
       zoomDelta: 0.75,
+      maxBoundsViscosity: 1,
+      bounceAtZoomLimits: false,
       preferCanvas: true,
       attributionControl: true,
     });
@@ -26,21 +43,13 @@ export class CoverageMap {
     map.attributionControl.addAttribution(
       '<a href="https://openfreemap.org/">OpenFreeMap</a> · <a href="https://openmaptiles.org/">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     );
-    const nw = map.unproject([5792 * 256, 3013 * 256], 13),
-      se = map.unproject([5795 * 256, 3016 * 256], 13);
-    const base = JSON.parse(get('basemap-data').textContent);
-    L.imageOverlay(base, [nw, se], { pane: 'tilePane', alt: 'Улицы, парки и реки Бишкека' }).addTo(
-      map,
-    );
+    this.viewport = new MapViewport(map, JSON.parse(get('basemap-data').textContent));
     map.createPane('heatSurface').style.zIndex = 350;
     L.control.scale({ imperial: false, maxWidth: 95, position: 'bottomleft' }).addTo(map);
     this.surface = L.layerGroup().addTo(map);
     this.markers = L.layerGroup().addTo(map);
     this.shapes = new Map();
     this.mode = 'grid';
-    get('zoom-in').onclick = () => map.zoomIn();
-    get('zoom-out').onclick = () => map.zoomOut();
-    get('fit-map').onclick = () => this.fit();
     const menu = get('layer-menu'),
       toggle = get('toggle-layers');
     const closeMenu = () => {
@@ -61,20 +70,10 @@ export class CoverageMap {
       }
     });
     menu.onchange = (event) => {
+      if (event.target.id === 'online-map') return;
       if (event.target.id === 'layer-radius') this.drawSurface();
       this.drawMarkers();
     };
-    const online = document.createElement('label');
-    online.innerHTML = '<input type="checkbox" id="online-map">Онлайн-подложка OSM';
-    menu.append(online);
-    const onlineTiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      maxNativeZoom: 19,
-    });
-    get('online-map').onchange = (e) =>
-      e.target.checked ? onlineTiles.addTo(map) : onlineTiles.remove();
-    const resize = new ResizeObserver(() => map.invalidateSize());
-    resize.observe(get('map'));
   }
 
   setData(data, period, algorithm, coverage, refit = false) {
@@ -84,19 +83,9 @@ export class CoverageMap {
     this.algorithm = algorithm;
     this.coverage = coverage;
     this.grid = gridFor(data.bounds);
-    if (refit) this.fit();
+    if (refit) this.viewport.setDistrict(data.bounds);
     this.drawSurface();
     this.drawMarkers();
-  }
-  fit() {
-    const { south, west, north, east } = this.data.bounds;
-    this.map.invalidateSize().fitBounds(
-      [
-        [south, west],
-        [north, east],
-      ],
-      { padding: [16, 16], maxZoom: 17, animate: false },
-    );
   }
   setMode(mode) {
     this.mode = mode;
@@ -139,13 +128,7 @@ export class CoverageMap {
         fillColor: colors[c.level],
         fillOpacity: heat ? 0 : 0.63,
       });
-      const coveringSites = hit?.[this.algorithm] || [];
-      const coverageText = coveringSites.length
-        ? 'Покрыта новой БС: ' + coveringSites.map(escapeHtml).join(', ')
-        : 'Вне охвата выбранной пары';
-      shape.bindPopup(`<strong>${escapeHtml(c.id)}</strong>${statusText[c.level]} · ${formatNumber(c.rsrp)} дБм
-        <br>Замеров: ${c.count}<br>Центр: ${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}
-        ${showCoverage && hit ? `<br>${coverageText}` : ''}`);
+      shape.bindPopup(cellPopup(c, showCoverage ? hit?.[this.algorithm] : undefined));
       this.shapes.set(c.id, shape);
       this.surface.addLayer(shape);
     }
@@ -259,6 +242,6 @@ export class CoverageMap {
     );
     const extent = L.latLngBounds([]);
     for (const c of points) extent.extend(L.latLng(latlng(c)).toBounds(2 * COVERAGE_RADIUS_M));
-    if (extent.isValid()) this.map.fitBounds(extent, { padding: [18, 18], animate: false });
+    if (extent.isValid()) this.viewport.showArea(extent);
   }
 }

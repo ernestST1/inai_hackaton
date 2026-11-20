@@ -2,7 +2,15 @@ import { analyze } from './analysis.js';
 import { icon } from './icons.js';
 import { CoverageMap } from './map.js';
 import { compareCoverage } from './planning.js';
-import { metrics, recommendation, ranking, analytics, dataView, sourceLabels } from './views.js';
+import {
+  metrics,
+  recommendation,
+  ranking,
+  signalDistribution,
+  analytics,
+  dataView,
+  sourceLabels,
+} from './views.js';
 
 const get = (id) => document.getElementById(id);
 // Keep a clean document for offline exports, before Leaflet adds interactive DOM.
@@ -38,6 +46,33 @@ function download(name, content, type) {
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
+
+function setupExpandedMap() {
+  const panel = get('map-card');
+  const home = panel.parentElement;
+  const dialog = get('map-dialog');
+  const button = get('fullscreen-map');
+
+  function updateButton(expanded) {
+    button.setAttribute('aria-pressed', String(expanded));
+    button.title = expanded ? 'Выйти из полного экрана' : 'Карта на весь экран';
+    button.setAttribute('aria-label', button.title);
+    button.innerHTML = icon(expanded ? 'collapse' : 'expand');
+    button.focus({ preventScroll: true });
+  }
+
+  button.addEventListener('click', () => {
+    if (dialog.open) return dialog.close();
+    dialog.append(panel);
+    dialog.showModal();
+    updateButton(true);
+  });
+  dialog.addEventListener('close', () => {
+    home.prepend(panel);
+    updateButton(false);
+  });
+}
+setupExpandedMap();
 function exportMap() {
   const page = original.cloneNode(true);
   page.querySelector('#initial-data').textContent = JSON.stringify({ data, source }).replace(
@@ -57,6 +92,7 @@ function renderOverview(refit = false) {
       button.setAttribute('aria-pressed', String(button.dataset.algorithm === algorithm)),
     );
   get('worst').innerHTML = ranking(summary);
+  get('distribution').innerHTML = signalDistribution(summary);
   get('show-pair')?.addEventListener('click', () => map.showPair());
   get('worst')
     .querySelectorAll('[data-cell]')

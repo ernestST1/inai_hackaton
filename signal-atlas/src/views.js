@@ -113,9 +113,8 @@ const heading = (pic, title) =>
   `<div class="detail-head"><i>${icon(pic)}</i><h2>${title}</h2></div>`;
 const stat = (label, value) => `<div class="stat-line"><span>${label}</span><b>${value}</b></div>`;
 
-function dayRow(period, data) {
-  const { cells, counts, samples } = data.periods[period];
-  const isDay = period === 'day';
+export function signalDistribution({ cells, counts }) {
+  if (!cells.length) return '<p class="muted">Нет ячеек с пятью замерами за этот период.</p>';
   const bars = Object.keys(levels).map(
     (level) =>
       `<span class="${level}" style="width:${(100 * counts[level]) / (cells.length || 1)}%"></span>`,
@@ -123,13 +122,19 @@ function dayRow(period, data) {
   const legend = Object.entries(levels).map(
     ([level, label]) => `<span><b class="swatch ${level}"></b>${label} ${counts[level]}</span>`,
   );
+  return `<div class="daybars" aria-hidden="true">${bars.join('')}</div>
+    <div class="breakdown">${legend.join('')}</div>`;
+}
+
+function dayRow(period, data) {
+  const summary = data.periods[period];
+  const isDay = period === 'day';
   return `<div class="compare-row">
     <div class="period-title">
       <strong class="inline">${icon(isDay ? 'sun' : 'moon', 16)}${periods[period]}</strong>
-      <small>${isDay ? '06:00–17:59' : '18:00–05:59'} · ${formatNumber(samples)} замеров</small>
+      <small>${isDay ? '06:00–17:59' : '18:00–05:59'} · ${formatNumber(summary.samples)} замеров</small>
     </div>
-    <div class="daybars">${bars.join('')}</div>
-    <div class="breakdown">${legend.join('')}</div>
+    ${signalDistribution(summary)}
   </div>`;
 }
 

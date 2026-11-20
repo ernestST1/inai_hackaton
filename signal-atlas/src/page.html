@@ -58,32 +58,44 @@
       <section id="overview" aria-label="Обзор покрытия">
         <div id="metrics" class="metrics"></div>
         <div class="overview-grid">
-          <article class="panel map-card">
+          <article class="panel map-card" id="map-card" aria-labelledby="map-title">
             <div class="map-head">
               <div>
-                <h2>Карта сигнала</h2>
+                <h2 id="map-title">Карта сигнала</h2>
                 <div class="muted map-sub">Медианный RSRP по ячейкам</div>
               </div>
-              <div class="segmented" aria-label="Вид карты">
-                <button data-mode="grid">
-                  <i data-icon="grid"></i>
-                  Сетка
-                </button>
-                <button data-mode="heat">
-                  <i data-icon="heat"></i>
-                  Тепловая
+              <div class="map-head-actions">
+                <div class="segmented" role="group" aria-label="Вид карты">
+                  <button data-mode="grid">
+                    <i data-icon="grid"></i>
+                    Сетка
+                  </button>
+                  <button data-mode="heat">
+                    <i data-icon="heat"></i>
+                    Тепловая
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="map-button fullscreen-toggle"
+                  id="fullscreen-map"
+                  aria-label="Карта на весь экран"
+                  title="Карта на весь экран"
+                  aria-pressed="false"
+                  aria-controls="map-dialog"
+                >
+                  <i data-icon="expand"></i>
                 </button>
               </div>
             </div>
-            <div class="algorithm-bar">
-              <span>Выбор площадок</span>
-              <div class="segmented" role="group" aria-label="Алгоритм на карте">
-                <button data-algorithm="best" aria-pressed="true">Полный перебор</button>
-                <button data-algorithm="greedy" aria-pressed="false">Жадный выбор</button>
+            <div class="map-filters">
+              <div class="algorithm-filter">
+                <span class="filter-label">Алгоритм</span>
+                <div class="segmented" role="group" aria-label="Алгоритм на карте">
+                  <button data-algorithm="best" aria-pressed="true">Полный перебор</button>
+                  <button data-algorithm="greedy" aria-pressed="false">Жадный выбор</button>
+                </div>
               </div>
-            </div>
-            <div class="map-stage">
-              <div id="map" aria-label="Интерактивная карта покрытия Бишкека"></div>
               <label class="map-period">
                 <i data-icon="clock"></i>
                 <select id="period" aria-label="Период на карте">
@@ -93,15 +105,21 @@
                 </select>
                 <i data-icon="chevron"></i>
               </label>
+            </div>
+            <div class="map-stage">
+              <div id="map" aria-label="Интерактивная карта покрытия Бишкека"></div>
+              <small id="schematic-note" hidden>Схема района без уличной подложки</small>
               <div class="layer-box">
                 <button
                   id="toggle-layers"
                   class="map-button"
                   aria-label="Слои карты"
                   title="Слои карты"
+                  aria-controls="layer-menu"
                   aria-expanded="false"
                 >
                   <i data-icon="layers"></i>
+                  Слои
                 </button>
                 <fieldset id="layer-menu" hidden>
                   <legend>Слои карты</legend>
@@ -125,6 +143,10 @@
                     <input type="checkbox" id="layer-radius" />
                     Радиусы 1 км и охват
                   </label>
+                  <label class="basemap-option">
+                    <input type="checkbox" id="online-map" />
+                    Онлайн-подложка OSM
+                  </label>
                 </fieldset>
               </div>
               <div class="map-tools">
@@ -138,7 +160,7 @@
                   aria-label="Показать район целиком"
                   title="Показать район целиком"
                 >
-                  <i data-icon="focus"></i>
+                  <i data-icon="aim"></i>
                 </button>
               </div>
             </div>
@@ -146,15 +168,15 @@
               <strong>RSRP, дБм</strong>
               <span>
                 <b class="swatch strong"></b>
-                ≥ −90
+                Сильный ≥ −90
               </span>
               <span>
                 <b class="swatch medium"></b>
-                −105 … &lt; −90
+                Средний −105 … &lt; −90
               </span>
               <span>
                 <b class="swatch weak"></b>
-                &lt; −105
+                Слабый &lt; −105
               </span>
               <span class="grid-size">
                 <i data-icon="grid"></i>
@@ -171,6 +193,10 @@
           <aside class="side">
             <article class="recommend" id="recommend"></article>
             <article id="worst" class="panel ranking"></article>
+            <article class="panel distribution">
+              <h2>Сигнал в районе</h2>
+              <div id="distribution"></div>
+            </article>
           </aside>
         </div>
       </section>
@@ -185,6 +211,7 @@
         <span class="footer-last">Бишкек · UTC+6</span>
       </footer>
     </main>
+    <dialog id="map-dialog" aria-labelledby="map-title"></dialog>
     <dialog id="import-dialog" aria-labelledby="import-title">
       <form id="import-form">
         <div class="dialog-head">
