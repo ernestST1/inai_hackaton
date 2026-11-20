@@ -855,7 +855,7 @@ nav a[aria-current] {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 32px 0 26px;
+  padding: 26px 0 22px;
 }
 .location {
   color: #3f6a60;
@@ -955,6 +955,7 @@ nav a[aria-current] {
   letter-spacing: -0.065em;
   line-height: 1.18;
   margin-top: 10px;
+  font-variant-numeric: tabular-nums;
 }
 .metric small {
   display: block;
@@ -985,9 +986,40 @@ nav a[aria-current] {
   flex-direction: column;
 }
 .map-head {
-  padding: 18px 21px;
+  padding: 15px 18px;
   justify-content: space-between;
   flex-wrap: wrap;
+}
+.map-head-actions,
+.algorithm-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+#map-dialog[open] {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+}
+#map-dialog .map-card {
+  border: 0;
+  border-radius: 0;
+  width: 100%;
+  overflow: auto;
+}
+#map-dialog .map-stage {
+  min-height: 180px;
+}
+body:has(#map-dialog[open]) {
+  overflow: hidden;
 }
 .map-sub {
   font-size: 0.79rem;
@@ -1007,7 +1039,8 @@ nav a[aria-current] {
   gap: 6px;
   border: 0;
   background: transparent;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  min-height: 32px;
   font-weight: 550;
   color: #60716b;
   padding: 6px 10px;
@@ -1021,6 +1054,9 @@ nav a[aria-current] {
   background: white;
   box-shadow: 0 1px 4px #25392b22;
   color: #246452;
+}
+.segmented button:hover:not([aria-pressed='true']) {
+  background: #e1ebe5;
 }
 .map-stage {
   position: relative;
@@ -1038,7 +1074,6 @@ nav a[aria-current] {
     repeating-linear-gradient(90deg, #e8ece4 0 36px, #dce3d8 37px);
   font-family: inherit;
 }
-.map-period,
 .map-tools,
 .layer-box {
   position: absolute;
@@ -1054,13 +1089,11 @@ nav a[aria-current] {
   box-shadow: 0 2px 7px #294c3020;
 }
 .map-period {
-  top: 14px;
-  left: 14px;
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
   color: #294c41;
+  box-shadow: none;
 }
 .map-period select {
   appearance: none;
@@ -1068,16 +1101,35 @@ nav a[aria-current] {
   background: transparent;
   border: 0;
   color: #294c41;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   font-weight: 570;
-  padding: 0 20px 0 25px;
-  margin: 0 -24px 0 -25px;
-  z-index: 1;
+  padding: 8px 29px 8px 35px;
+  border-radius: inherit;
+}
+.map-period i {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+}
+.map-period i:last-child {
+  left: auto;
+  right: 8px;
 }
 .map-period .icon {
-  pointer-events: none;
   width: 16px;
   height: 16px;
+}
+#schematic-note {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 700;
+  max-width: 55%;
+  border-radius: 5px;
+  padding: 4px 8px;
+  background: #fff;
+  color: #3e5750;
+  font-size: 0.78rem;
 }
 .layer-box {
   right: 14px;
@@ -1087,9 +1139,11 @@ nav a[aria-current] {
 .layer-box fieldset {
   text-align: left;
   margin: 7px 0 0;
-  padding: 9px 13px 12px;
-  min-width: 170px;
-  font-size: 0.82rem;
+  padding: 8px 14px 10px;
+  min-width: 200px;
+  font-size: 0.86rem;
+  background: white;
+  box-shadow: 0 7px 25px #17372a25;
 }
 .layer-box legend {
   background: white;
@@ -1101,8 +1155,13 @@ nav a[aria-current] {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 4px 0;
+  min-height: 32px;
   cursor: pointer;
+}
+.basemap-option {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+  margin-top: 4px;
 }
 input[type='checkbox'] {
   accent-color: var(--teal);
@@ -1117,8 +1176,28 @@ input[type='checkbox'] {
   padding: 0;
 }
 .map-button:hover,
-.zoom-group button:hover {
+.zoom-group button:hover:enabled {
   background: #e5f1e8;
+}
+#toggle-layers {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  padding: 0 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+#toggle-layers[aria-expanded='true'] {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+.map-head-actions .map-button {
+  box-shadow: none;
+}
+.zoom-group button:disabled {
+  color: #697974;
+  background: #edf1ef;
 }
 .map-tools {
   right: 14px;
@@ -1152,14 +1231,18 @@ input[type='checkbox'] {
   color: #314a42;
   font-weight: 600;
 }
-.algorithm-bar {
+.map-filters {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 5px 12px;
-  padding: 0 18px 12px;
-  font-size: 0.82rem;
+  gap: 8px 12px;
+  padding: 9px 18px;
+  border-top: 1px solid var(--line);
+  background: #f6f9f7;
+}
+.filter-label {
+  font-size: 0.8rem;
   font-weight: 550;
   color: #4d6258;
 }
@@ -1328,7 +1411,18 @@ input[type='checkbox'] {
 }
 .ranking {
   padding: 18px 19px 9px;
-  flex: 1;
+}
+.distribution {
+  padding: 15px 19px 17px;
+}
+.distribution h2 {
+  font-size: 1.06rem;
+}
+.distribution .breakdown {
+  gap: 5px 12px;
+}
+.distribution .muted {
+  margin-top: 7px;
 }
 .ranking-head {
   display: flex;
@@ -1456,6 +1550,31 @@ input[type='checkbox'] {
 }
 .leaflet-popup-content-wrapper {
   border-radius: 10px;
+}
+.cell-details dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 9px 0 0;
+}
+.cell-details dt {
+  color: var(--muted);
+}
+.cell-details dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.signal-reading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cell-coverage {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  color: var(--teal);
 }
 .leaflet-control-scale {
   margin: 0 0 12px 14px !important;
@@ -1776,6 +1895,9 @@ input::file-selector-button {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
+  .distribution {
+    grid-column: 1 / -1;
+  }
   .page-head {
     flex-wrap: wrap;
     padding: 22px 0 18px;
@@ -1860,15 +1982,35 @@ input::file-selector-button {
   .map-head {
     gap: 8px;
   }
+  .map-filters {
+    padding: 8px 12px;
+  }
+  .algorithm-filter {
+    gap: 4px;
+  }
+  .filter-label {
+    display: none;
+  }
   .map-head h2 {
     font-size: 1.04rem;
   }
   .map-sub {
-    font-size: 0.71rem;
+    display: none;
+  }
+  .map-period select {
+    font-size: 0.78rem;
+    padding: 8px 22px 8px 28px;
+  }
+  .map-period i {
+    left: 7px;
+  }
+  .map-period i:last-child {
+    left: auto;
+    right: 5px;
   }
   .segmented button {
-    padding: 5px 6px;
-    font-size: 0.71rem;
+    padding: 6px 7px;
+    font-size: 0.78rem;
   }
   .segmented button .icon {
     width: 12px;
@@ -1896,7 +2038,7 @@ input::file-selector-button {
   }
   .map-legend {
     padding: 10px;
-    font-size: 0.67rem;
+    font-size: 0.75rem;
   }
   .footer-last {
     font-size: 0.67rem;
@@ -2065,32 +2207,44 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       <section id="overview" aria-label="Обзор покрытия">
         <div id="metrics" class="metrics"></div>
         <div class="overview-grid">
-          <article class="panel map-card">
+          <article class="panel map-card" id="map-card" aria-labelledby="map-title">
             <div class="map-head">
               <div>
-                <h2>Карта сигнала</h2>
+                <h2 id="map-title">Карта сигнала</h2>
                 <div class="muted map-sub">Медианный RSRP по ячейкам</div>
               </div>
-              <div class="segmented" aria-label="Вид карты">
-                <button data-mode="grid">
-                  <i data-icon="grid"></i>
-                  Сетка
-                </button>
-                <button data-mode="heat">
-                  <i data-icon="heat"></i>
-                  Тепловая
+              <div class="map-head-actions">
+                <div class="segmented" role="group" aria-label="Вид карты">
+                  <button data-mode="grid">
+                    <i data-icon="grid"></i>
+                    Сетка
+                  </button>
+                  <button data-mode="heat">
+                    <i data-icon="heat"></i>
+                    Тепловая
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="map-button fullscreen-toggle"
+                  id="fullscreen-map"
+                  aria-label="Карта на весь экран"
+                  title="Карта на весь экран"
+                  aria-pressed="false"
+                  aria-controls="map-dialog"
+                >
+                  <i data-icon="expand"></i>
                 </button>
               </div>
             </div>
-            <div class="algorithm-bar">
-              <span>Выбор площадок</span>
-              <div class="segmented" role="group" aria-label="Алгоритм на карте">
-                <button data-algorithm="best" aria-pressed="true">Полный перебор</button>
-                <button data-algorithm="greedy" aria-pressed="false">Жадный выбор</button>
+            <div class="map-filters">
+              <div class="algorithm-filter">
+                <span class="filter-label">Алгоритм</span>
+                <div class="segmented" role="group" aria-label="Алгоритм на карте">
+                  <button data-algorithm="best" aria-pressed="true">Полный перебор</button>
+                  <button data-algorithm="greedy" aria-pressed="false">Жадный выбор</button>
+                </div>
               </div>
-            </div>
-            <div class="map-stage">
-              <div id="map" aria-label="Интерактивная карта покрытия Бишкека"></div>
               <label class="map-period">
                 <i data-icon="clock"></i>
                 <select id="period" aria-label="Период на карте">
@@ -2100,15 +2254,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 </select>
                 <i data-icon="chevron"></i>
               </label>
+            </div>
+            <div class="map-stage">
+              <div id="map" aria-label="Интерактивная карта покрытия Бишкека"></div>
+              <small id="schematic-note" hidden>Схема района без уличной подложки</small>
               <div class="layer-box">
                 <button
                   id="toggle-layers"
                   class="map-button"
                   aria-label="Слои карты"
                   title="Слои карты"
+                  aria-controls="layer-menu"
                   aria-expanded="false"
                 >
                   <i data-icon="layers"></i>
+                  Слои
                 </button>
                 <fieldset id="layer-menu" hidden>
                   <legend>Слои карты</legend>
@@ -2132,6 +2292,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     <input type="checkbox" id="layer-radius" />
                     Радиусы 1 км и охват
                   </label>
+                  <label class="basemap-option">
+                    <input type="checkbox" id="online-map" />
+                    Онлайн-подложка OSM
+                  </label>
                 </fieldset>
               </div>
               <div class="map-tools">
@@ -2145,7 +2309,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                   aria-label="Показать район целиком"
                   title="Показать район целиком"
                 >
-                  <i data-icon="focus"></i>
+                  <i data-icon="aim"></i>
                 </button>
               </div>
             </div>
@@ -2153,15 +2317,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
               <strong>RSRP, дБм</strong>
               <span>
                 <b class="swatch strong"></b>
-                ≥ −90
+                Сильный ≥ −90
               </span>
               <span>
                 <b class="swatch medium"></b>
-                −105 … &lt; −90
+                Средний −105 … &lt; −90
               </span>
               <span>
                 <b class="swatch weak"></b>
-                &lt; −105
+                Слабый &lt; −105
               </span>
               <span class="grid-size">
                 <i data-icon="grid"></i>
@@ -2178,6 +2342,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <aside class="side">
             <article class="recommend" id="recommend"></article>
             <article id="worst" class="panel ranking"></article>
+            <article class="panel distribution">
+              <h2>Сигнал в районе</h2>
+              <div id="distribution"></div>
+            </article>
           </aside>
         </div>
       </section>
@@ -2192,6 +2360,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <span class="footer-last">Бишкек · UTC+6</span>
       </footer>
     </main>
+    <dialog id="map-dialog" aria-labelledby="map-title"></dialog>
     <dialog id="import-dialog" aria-labelledby="import-title">
       <form id="import-form">
         <div class="dialog-head">
@@ -2741,7 +2910,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     chevron: '<path d="m7 10 5 5 5-5"/>',
     plus: '<path d="M5 12h14m-7-7v14"/>',
     minus: '<path d="M5 12h14"/>',
-    focus: '<path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/>',
+    expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
+    collapse: '<path d="M3 8h5V3m13 5h-5V3M8 21v-5H3m13 5v-5h5"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
     moon: '<path d="M20.5 14.5a9 9 0 0 1-11-11 9 9 0 1 0 11 11Z"/>',
     list: '<path d="M9 5h12M9 12h12M9 19h12"/><circle cx="4" cy="5" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="19" r="1"/>',
@@ -2852,12 +3022,107 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     return layer;
   }
 
+  // src/map-viewport.js
+  var BASE_ZOOM = 13;
+  var TILE_SIZE = 256;
+  var BASE_NORTHWEST = [5792, 3013];
+  var BASE_SOUTHEAST = [5795, 3016];
+  var WORLD_MIN_ZOOM = 2;
+  function streetBounds(map2) {
+    const corner = (tile) => map2.unproject(L.point(tile).multiplyBy(TILE_SIZE), BASE_ZOOM);
+    return L.latLngBounds(corner(BASE_NORTHWEST), corner(BASE_SOUTHEAST));
+  }
+  function zoomForExtent(view, extent, fill, snap) {
+    const ratioX = view.x / extent.x;
+    const ratioY = view.y / extent.y;
+    const zoom = BASE_ZOOM + Math.log2(fill ? Math.max(ratioX, ratioY) : Math.min(ratioX, ratioY));
+    const steps = fill ? Math.ceil(zoom / snap) : Math.floor(zoom / snap);
+    return Number((steps * snap).toFixed(2));
+  }
+  var MapViewport = class {
+    constructor(map2, image) {
+      this.map = map2;
+      const bounds = streetBounds(map2);
+      this.streetFrame = bounds.pad(-3e-3);
+      L.imageOverlay(image, bounds, { pane: "tilePane", alt: "Улицы, парки и реки Бишкека" }).addTo(
+        map2
+      );
+      this.tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
+      this.onlineInput = document.getElementById("online-map");
+      this.zoomIn = document.getElementById("zoom-in");
+      this.zoomOut = document.getElementById("zoom-out");
+      this.zoomIn.onclick = () => map2.zoomIn();
+      this.zoomOut.onclick = () => map2.zoomOut();
+      document.getElementById("fit-map").onclick = () => this.fitDistrict();
+      this.onlineInput.onchange = () => {
+        if (this.onlineInput.checked) this.tiles.addTo(map2);
+        else this.tiles.remove();
+        this.refresh();
+      };
+      map2.on("zoomend zoomlevelschange", () => this.updateButtons());
+      new ResizeObserver(() => this.refresh()).observe(map2.getContainer());
+    }
+    setDistrict({ south, west, north, east }) {
+      this.district = L.latLngBounds([south, west], [north, east]);
+      this.fitDistrict();
+    }
+    fitDistrict() {
+      this.setFrame(this.district);
+      this.map.fitBounds(this.district, { padding: [16, 16], maxZoom: 17, animate: false });
+    }
+    showArea(bounds) {
+      if (!this.frame.contains(bounds))
+        this.setFrame(
+          L.latLngBounds(this.district.getSouthWest(), this.district.getNorthEast()).extend(bounds)
+        );
+      this.map.fitBounds(bounds, { padding: [18, 18], animate: false });
+    }
+    setFrame(area) {
+      this.frame = this.streetFrame.contains(area) ? this.streetFrame : area.pad(0.35);
+      this.refresh();
+    }
+    refresh() {
+      if (!this.frame) return;
+      const map2 = this.map;
+      if (!map2.getContainer().clientWidth || !map2.getContainer().clientHeight) return;
+      map2.invalidateSize({ animate: false });
+      const size = map2.getSize();
+      const online = this.onlineInput.checked;
+      const hasStreets = this.frame === this.streetFrame;
+      const span = map2.project(this.frame.getSouthEast(), BASE_ZOOM).subtract(map2.project(this.frame.getNorthWest(), BASE_ZOOM));
+      const snap = L.Browser.any3d ? map2.options.zoomSnap : 1;
+      const minimum = online ? WORLD_MIN_ZOOM : zoomForExtent(size, span, hasStreets, snap);
+      const limits = online ? null : this.frame;
+      map2.setMinZoom(Math.min(map2.getMaxZoom(), Math.max(WORLD_MIN_ZOOM, minimum)));
+      if (map2.options.maxBounds !== limits) map2.setMaxBounds(limits);
+      if (limits && Number.isFinite(map2.getZoom())) map2.panInsideBounds(limits, { animate: false });
+      document.getElementById("schematic-note").hidden = online || hasStreets;
+      this.updateButtons();
+    }
+    updateButtons() {
+      const zoom = this.map.getZoom();
+      this.zoomIn.disabled = this.map.getMaxZoom() - zoom < 1e-6;
+      this.zoomOut.disabled = zoom - this.map.getMinZoom() < 1e-6;
+    }
+  };
+
   // src/map.js
   var statusText = { strong: "Сильный сигнал", medium: "Средний сигнал", weak: "Слабый сигнал" };
   var colors = { strong: "#49b488", medium: "#efbd55", weak: "#e77e70" };
   var latlng = (point) => [point.lat, point.lon];
   var outlineColors = { shared: "#42584b", best: "#1561a0", greedy: "#7d3495" };
   var get = (id) => document.getElementById(id);
+  function cellPopup(cell, coveringSites) {
+    const coverage = coveringSites?.length ? `Покрыта новой БС: ${coveringSites.map(escapeHtml).join(", ")}` : "Вне охвата выбранной пары";
+    return `<div class="cell-details">
+    <strong>${escapeHtml(cell.id)}</strong>
+    <div class="signal-reading"><i class="swatch ${cell.level}"></i>${statusText[cell.level]}</div>
+    <dl><dt>Медиана</dt><dd>${formatNumber(cell.rsrp)} дБм</dd>
+    <dt>Замеры</dt><dd>${formatNumber(cell.count)}</dd>
+    <dt>Центр</dt><dd>${cell.lat.toFixed(5)}, ${cell.lon.toFixed(5)}</dd></dl>
+    ${coveringSites ? `<div class="cell-coverage">${coverage}</div>` : ""}
+  </div>`;
+  }
   var CoverageMap = class {
     constructor() {
       this.map = L.map("map", {
@@ -2866,6 +3131,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         maxZoom: 19,
         zoomSnap: 0.1,
         zoomDelta: 0.75,
+        maxBoundsViscosity: 1,
+        bounceAtZoomLimits: false,
         preferCanvas: true,
         attributionControl: true
       });
@@ -2874,20 +3141,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       map2.attributionControl.addAttribution(
         '<a href="https://openfreemap.org/">OpenFreeMap</a> · <a href="https://openmaptiles.org/">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       );
-      const nw = map2.unproject([5792 * 256, 3013 * 256], 13), se = map2.unproject([5795 * 256, 3016 * 256], 13);
-      const base = JSON.parse(get("basemap-data").textContent);
-      L.imageOverlay(base, [nw, se], { pane: "tilePane", alt: "Улицы, парки и реки Бишкека" }).addTo(
-        map2
-      );
+      this.viewport = new MapViewport(map2, JSON.parse(get("basemap-data").textContent));
       map2.createPane("heatSurface").style.zIndex = 350;
       L.control.scale({ imperial: false, maxWidth: 95, position: "bottomleft" }).addTo(map2);
       this.surface = L.layerGroup().addTo(map2);
       this.markers = L.layerGroup().addTo(map2);
       this.shapes = /* @__PURE__ */ new Map();
       this.mode = "grid";
-      get("zoom-in").onclick = () => map2.zoomIn();
-      get("zoom-out").onclick = () => map2.zoomOut();
-      get("fit-map").onclick = () => this.fit();
       const menu = get("layer-menu"), toggle = get("toggle-layers");
       const closeMenu = () => {
         menu.hidden = true;
@@ -2907,19 +3167,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         }
       });
       menu.onchange = (event) => {
+        if (event.target.id === "online-map") return;
         if (event.target.id === "layer-radius") this.drawSurface();
         this.drawMarkers();
       };
-      const online = document.createElement("label");
-      online.innerHTML = '<input type="checkbox" id="online-map">Онлайн-подложка OSM';
-      menu.append(online);
-      const onlineTiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        maxNativeZoom: 19
-      });
-      get("online-map").onchange = (e) => e.target.checked ? onlineTiles.addTo(map2) : onlineTiles.remove();
-      const resize = new ResizeObserver(() => map2.invalidateSize());
-      resize.observe(get("map"));
     }
     setData(data2, period2, algorithm2, coverage, refit = false) {
       this.data = data2;
@@ -2928,19 +3179,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       this.algorithm = algorithm2;
       this.coverage = coverage;
       this.grid = gridFor(data2.bounds);
-      if (refit) this.fit();
+      if (refit) this.viewport.setDistrict(data2.bounds);
       this.drawSurface();
       this.drawMarkers();
-    }
-    fit() {
-      const { south, west, north, east } = this.data.bounds;
-      this.map.invalidateSize().fitBounds(
-        [
-          [south, west],
-          [north, east]
-        ],
-        { padding: [16, 16], maxZoom: 17, animate: false }
-      );
     }
     setMode(mode2) {
       this.mode = mode2;
@@ -2983,11 +3224,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           fillColor: colors[c.level],
           fillOpacity: heat ? 0 : 0.63
         });
-        const coveringSites = hit?.[this.algorithm] || [];
-        const coverageText = coveringSites.length ? "Покрыта новой БС: " + coveringSites.map(escapeHtml).join(", ") : "Вне охвата выбранной пары";
-        shape.bindPopup(`<strong>${escapeHtml(c.id)}</strong>${statusText[c.level]} · ${formatNumber(c.rsrp)} дБм
-        <br>Замеров: ${c.count}<br>Центр: ${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}
-        ${showCoverage && hit ? `<br>${coverageText}` : ""}`);
+        shape.bindPopup(cellPopup(c, showCoverage ? hit?.[this.algorithm] : void 0));
         this.shapes.set(c.id, shape);
         this.surface.addLayer(shape);
       }
@@ -3079,7 +3316,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       );
       const extent = L.latLngBounds([]);
       for (const c of points) extent.extend(L.latLng(latlng(c)).toBounds(2 * COVERAGE_RADIUS_M));
-      if (extent.isValid()) this.map.fitBounds(extent, { padding: [18, 18], animate: false });
+      if (extent.isValid()) this.viewport.showArea(extent);
     }
   };
 
@@ -3183,22 +3420,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   }
   var heading = (pic, title) => `<div class="detail-head"><i>${icon(pic)}</i><h2>${title}</h2></div>`;
   var stat = (label, value) => `<div class="stat-line"><span>${label}</span><b>${value}</b></div>`;
-  function dayRow(period2, data2) {
-    const { cells, counts, samples } = data2.periods[period2];
-    const isDay = period2 === "day";
+  function signalDistribution({ cells, counts }) {
+    if (!cells.length) return '<p class="muted">Нет ячеек с пятью замерами за этот период.</p>';
     const bars = Object.keys(levels).map(
       (level) => `<span class="${level}" style="width:${100 * counts[level] / (cells.length || 1)}%"></span>`
     );
     const legend = Object.entries(levels).map(
       ([level, label]) => `<span><b class="swatch ${level}"></b>${label} ${counts[level]}</span>`
     );
+    return `<div class="daybars" aria-hidden="true">${bars.join("")}</div>
+    <div class="breakdown">${legend.join("")}</div>`;
+  }
+  function dayRow(period2, data2) {
+    const summary = data2.periods[period2];
+    const isDay = period2 === "day";
     return `<div class="compare-row">
     <div class="period-title">
       <strong class="inline">${icon(isDay ? "sun" : "moon", 16)}${periods[period2]}</strong>
-      <small>${isDay ? "06:00–17:59" : "18:00–05:59"} · ${formatNumber(samples)} замеров</small>
+      <small>${isDay ? "06:00–17:59" : "18:00–05:59"} · ${formatNumber(summary.samples)} замеров</small>
     </div>
-    <div class="daybars">${bars.join("")}</div>
-    <div class="breakdown">${legend.join("")}</div>
+    ${signalDistribution(summary)}
   </div>`;
   }
   function analytics(data2) {
@@ -3295,6 +3536,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 3e4);
   }
+  function setupExpandedMap() {
+    const panel = get2("map-card");
+    const home = panel.parentElement;
+    const dialog = get2("map-dialog");
+    const button = get2("fullscreen-map");
+    function updateButton(expanded) {
+      button.setAttribute("aria-pressed", String(expanded));
+      button.title = expanded ? "Выйти из полного экрана" : "Карта на весь экран";
+      button.setAttribute("aria-label", button.title);
+      button.innerHTML = icon(expanded ? "collapse" : "expand");
+      button.focus({ preventScroll: true });
+    }
+    button.addEventListener("click", () => {
+      if (dialog.open) return dialog.close();
+      dialog.append(panel);
+      dialog.showModal();
+      updateButton(true);
+    });
+    dialog.addEventListener("close", () => {
+      home.prepend(panel);
+      updateButton(false);
+    });
+  }
+  setupExpandedMap();
   function exportMap() {
     const page = original.cloneNode(true);
     page.querySelector("#initial-data").textContent = JSON.stringify({ data, source }).replace(
@@ -3312,6 +3577,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (button) => button.setAttribute("aria-pressed", String(button.dataset.algorithm === algorithm))
     );
     get2("worst").innerHTML = ranking(summary);
+    get2("distribution").innerHTML = signalDistribution(summary);
     get2("show-pair")?.addEventListener("click", () => map.showPair());
     get2("worst").querySelectorAll("[data-cell]").forEach((button) => button.onclick = () => map.focusCell(button.dataset.cell));
     get2("period").value = period;
