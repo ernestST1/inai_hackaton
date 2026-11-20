@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102d2d">
+  <title>Эфир · Карта покрытия Бишкека</title>
+  <style>/*__STYLES__*/</style>
+</head>
+<body>
+  <header class="topbar"><div class="nav-inner">
+    <a class="brand" href="#overview" aria-label="Эфир, обзор покрытия"><span class="brand-icon" data-icon="brand"></span>Эфир</a>
+    <span class="brand-caption">Радиоаналитика</span>
+    <nav aria-label="Основная навигация">
+      <a href="#overview" data-nav="overview"><i data-icon="map"></i>Обзор</a>
+      <a href="#analytics" data-nav="analytics"><i data-icon="chart"></i>Аналитика</a>
+      <a href="#data" data-nav="data"><i data-icon="database"></i>Данные</a>
+    </nav>
+    <span id="source-badge" class="source-badge"></span>
+  </div></header>
+  <main class="workspace">
+    <div class="page-head">
+      <div><div class="location"><i data-icon="pin"></i>Бишкек, Кыргызстан</div><h1 id="page-title">Карта покрытия</h1><p id="page-description"></p></div>
+      <div class="actions"><button id="open-import" class="btn"><i data-icon="upload"></i>Загрузить CSV</button><button id="save-json" class="btn primary"><i data-icon="download"></i>Скачать JSON</button></div>
+    </div>
+    <section id="overview" aria-label="Обзор покрытия">
+      <div id="metrics" class="metrics"></div>
+      <div class="overview-grid">
+        <article class="panel map-card">
+          <div class="map-head"><div><h2>Карта сигнала</h2><div class="muted map-sub">Медианный RSRP по ячейкам</div></div>
+            <div class="segmented" aria-label="Вид карты"><button data-mode="grid"><i data-icon="grid"></i>Сетка</button><button data-mode="heat"><i data-icon="heat"></i>Тепловая</button></div>
+          </div>
+          <div class="map-stage">
+            <div id="map" aria-label="Интерактивная карта покрытия Бишкека"></div>
+            <label class="map-period"><i data-icon="clock"></i><select id="period" aria-label="Период на карте"><option value="all">Все сутки</option><option value="day">День</option><option value="night">Ночь</option></select><i data-icon="chevron"></i></label>
+            <div class="layer-box"><button id="toggle-layers" class="map-button" aria-label="Слои карты" title="Слои карты" aria-expanded="false"><i data-icon="layers"></i></button>
+              <fieldset id="layer-menu" hidden><legend>Слои карты</legend><label><input type="checkbox" id="layer-towers" checked>Базовые станции</label><label><input type="checkbox" id="layer-sites" checked>Лучшая пара</label><label><input type="checkbox" id="layer-other">Все кандидаты</label><label><input type="checkbox" id="layer-radius">Радиусы 1 км</label></fieldset>
+            </div>
+            <div class="map-tools"><div class="zoom-group"><button id="zoom-in" aria-label="Приблизить"><i data-icon="plus"></i></button><button id="zoom-out" aria-label="Отдалить"><i data-icon="minus"></i></button></div><button id="fit-map" class="map-button" aria-label="Показать район целиком" title="Показать район целиком"><i data-icon="focus"></i></button></div>
+          </div>
+          <div class="map-legend"><strong>RSRP, дБм</strong><span><b class="swatch strong"></b>≥ −90</span><span><b class="swatch medium"></b>−105 … &lt; −90</span><span><b class="swatch weak"></b>&lt; −105</span><span class="grid-size"><i data-icon="grid"></i>200 × 200 м</span></div>
+        </article>
+        <aside class="side"><article class="recommend" id="recommend"></article><article id="worst" class="panel ranking"></article></aside>
+      </div>
+    </section>
+    <section id="analytics" aria-label="Сравнение алгоритмов и периодов" hidden></section>
+    <section id="data" aria-label="Исходные данные" hidden></section>
+    <footer><span class="footer-brand"><i data-icon="brand"></i>Эфир</span><span>Анализ радиопокрытия</span><span class="footer-last">Бишкек · UTC+6</span></footer>
+  </main>
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <form id="import-form">
+      <div class="dialog-head"><div><h2 id="import-title">Загрузка данных</h2><p class="muted">Три CSV-файла и границы исследуемого района.</p></div><button type="button" id="close-import" class="icon-button" aria-label="Закрыть"><i data-icon="close"></i></button></div>
+      <div id="file-inputs"></div>
+      <fieldset class="bounds"><legend>Границы и сетка</legend>
+        <label class="bounds-choice">Источник параметров
+          <select id="bounds-source"><option value="file">Файл bounds.json</option><option value="current">Текущий набор</option><option value="manual">Ввести границы вручную</option></select>
+        </label>
+        <label class="file-field" id="bounds-file-row">bounds.json<input id="file-bounds" type="file" accept=".json,application/json" required></label>
+        <div id="bound-inputs" hidden></div>
+      </fieldset>
+      <p id="import-error" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><span>Расчёт в вашем браузере</span><button class="btn primary" type="submit"><i data-icon="grid"></i>Построить карту</button></div>
+    </form>
+  </dialog>
+  <div id="notice" role="status" hidden></div>
+  <script type="application/json" id="initial-data">__DATA__</script>
+  <script type="application/json" id="basemap-data">__BASE__</script>
+  <script>/*__LEAFLET__*/</script>
+  <script>/*__APP__*/</script>
+</body>
+</html>
