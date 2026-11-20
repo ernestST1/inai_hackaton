@@ -1,0 +1,112 @@
+[
+  {
+    "msisdn": "996770610000",
+    "balance_som": 1000,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610001",
+    "balance_som": 250,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610002",
+    "balance_som": 0,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610003",
+    "balance_som": 10000,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610004",
+    "balance_som": 101.99,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610005",
+    "balance_som": 102,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610006",
+    "balance_som": 500,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610007",
+    "balance_som": 100,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610008",
+    "balance_som": 50,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  },
+  {
+    "msisdn": "996770610009",
+    "balance_som": 999.99,
+    "tariff_id": "T01",
+    "remaining": {
+      "minutes": 50,
+      "gb": 1,
+      "sms": 20
+    },
+    "transferred_today_som": 0
+  }
+]

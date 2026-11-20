@@ -1,0 +1,253 @@
+[
+  {
+    "id": "U01",
+    "title": "Баланс",
+    "fixture": "subscribers.json",
+    "overrides": {},
+    "steps": [
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "*100#"
+        },
+        "expected": {
+          "status": 200,
+          "end": true,
+          "outcome": "balance",
+          "balance_som": 1000
+        }
+      }
+    ]
+  },
+  {
+    "id": "U03",
+    "title": "Два уровня меню",
+    "fixture": "subscribers.json",
+    "overrides": {},
+    "steps": [
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "*111#"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "1"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "2"
+        },
+        "expected": {
+          "status": 200,
+          "end": false,
+          "outcome": "confirmation",
+          "package_id": "D5"
+        }
+      }
+    ]
+  },
+  {
+    "id": "U06",
+    "title": "Покупка D1",
+    "fixture": "subscribers.json",
+    "overrides": {},
+    "steps": [
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "*111#"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "1"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "1"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "1"
+        },
+        "expected": {
+          "status": 200,
+          "end": true,
+          "outcome": "purchase_success"
+        }
+      },
+      {
+        "op": "inspect",
+        "expected": {
+          "balances": {
+            "996770610000": 970,
+            "996770610001": 250
+          },
+          "negative_balances": 0
+        }
+      },
+      {
+        "op": "inspect",
+        "expected": {
+          "remaining": {
+            "996770610000": {
+              "gb": 2,
+              "minutes": 50,
+              "sms": 20
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "U09",
+    "title": "Успешный перевод с комиссией",
+    "fixture": "subscribers.json",
+    "overrides": {},
+    "steps": [
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "*145*996770610001*100#"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "1"
+        },
+        "expected": {
+          "status": 200,
+          "end": true,
+          "outcome": "transfer_success"
+        }
+      },
+      {
+        "op": "inspect",
+        "expected": {
+          "balances": {
+            "996770610000": 898,
+            "996770610001": 350
+          },
+          "negative_balances": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "U21",
+    "title": "Таймаут ровно 30 секунд",
+    "fixture": "subscribers.json",
+    "overrides": {},
+    "steps": [
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "*111#"
+        },
+        "expected": {
+          "status": 200,
+          "end": false
+        }
+      },
+      {
+        "op": "advance",
+        "seconds": 30
+      },
+      {
+        "op": "request",
+        "method": "POST",
+        "path": "/ussd",
+        "body": {
+          "msisdn": "996770610000",
+          "session_id": "s1",
+          "input": "1"
+        },
+        "expected": {
+          "status": 200,
+          "end": true,
+          "outcome": "session_expired"
+        }
+      }
+    ]
+  }
+]

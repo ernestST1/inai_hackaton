@@ -1,0 +1,23 @@
+[
+  {
+    "id": "D1",
+    "name": "1 ГБ",
+    "price_som": 30,
+    "gb": 1,
+    "minutes": 0
+  },
+  {
+    "id": "D5",
+    "name": "5 ГБ",
+    "price_som": 100,
+    "gb": 5,
+    "minutes": 0
+  },
+  {
+    "id": "M50",
+    "name": "50 минут",
+    "price_som": 40,
+    "gb": 0,
+    "minutes": 50
+  }
+]
