@@ -7,7 +7,7 @@ const COLOR_STOPS = [
   [-105, [238, 177, 95]],
   [-95, [241, 207, 122]],
   [-90, [135, 195, 146]],
-  [-70, [58, 161, 125]]
+  [-70, [58, 161, 125]],
 ];
 
 function signalColor(rsrp) {
@@ -66,7 +66,10 @@ function renderBlock(cells, medians, grid) {
   context.putImageData(image, 0, 0);
   const southWest = grid.point(firstRow, firstCol);
   const northEast = grid.point(firstRow + CELLS_PER_BLOCK, firstCol + CELLS_PER_BLOCK);
-  const bounds = [[southWest.lat, southWest.lon], [northEast.lat, northEast.lon]];
+  const bounds = [
+    [southWest.lat, southWest.lon],
+    [northEast.lat, northEast.lon],
+  ];
   return L.imageOverlay(canvas.toDataURL(), bounds, { pane: 'heatSurface' });
 }
 

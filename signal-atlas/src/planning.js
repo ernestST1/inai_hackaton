@@ -1,12 +1,38 @@
 import { coversCell, haversine } from './geo.js';
 import { compareSiteIds } from './input.js';
 
-const MIN_TOWER_DISTANCE_M = 500;
+export const MIN_TOWER_DISTANCE_M = 500;
+
+// Две пары могут покрывать разные ячейки при одинаковом общем охвате.
+export function compareCoverage(candidates, summary, earthRadius) {
+  const byCell = new Map();
+  const counts = { shared: 0, best: 0, greedy: 0 };
+  const selected = candidates.filter(
+    (site) => summary.plan.best.ids.includes(site.id) || summary.plan.greedy.ids.includes(site.id),
+  );
+  for (const cell of summary.cells) {
+    if (cell.level !== 'weak') continue;
+    const covering = selected.filter((site) => coversCell(site, cell, earthRadius));
+    const best = covering
+      .filter((site) => summary.plan.best.ids.includes(site.id))
+      .map((site) => site.id);
+    const greedy = covering
+      .filter((site) => summary.plan.greedy.ids.includes(site.id))
+      .map((site) => site.id);
+    let category = null;
+    if (best.length && greedy.length) category = 'shared';
+    else if (best.length) category = 'best';
+    else if (greedy.length) category = 'greedy';
+    if (category) counts[category]++;
+    byCell.set(cell.id, { best, greedy, category });
+  }
+  return { byCell, counts };
+}
 
 export function markEligibleSites(sites, towers, earthRadius) {
-  return sites.map(site => ({
+  return sites.map((site) => ({
     ...site,
-    allowed: towers.every(tower => haversine(site, tower, earthRadius) >= MIN_TOWER_DISTANCE_M)
+    allowed: towers.every((tower) => haversine(site, tower, earthRadius) >= MIN_TOWER_DISTANCE_M),
   }));
 }
 

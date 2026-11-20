@@ -13,7 +13,24 @@ export function median(values) {
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 1) return sorted[middle];
-  return (sorted[middle - 1] + sorted[middle]) / 2;
+  const left = sorted[middle - 1];
+  const right = sorted[middle];
+  if (left === right) return left;
+  // Усредняем исходные десятичные значения, сохраняя разрядность около порогов RSRP.
+  const a = decimalParts(left);
+  const b = decimalParts(right);
+  const exponent = Math.min(a.exponent, b.exponent);
+  const sum =
+    a.coefficient * 10n ** BigInt(a.exponent - exponent) +
+    b.coefficient * 10n ** BigInt(b.exponent - exponent);
+  // Деление на два эквивалентно умножению на 5 и сдвигу десятичной точки.
+  return Number(String(sum * 5n) + 'e' + (exponent - 1));
+}
+
+function decimalParts(value) {
+  const [mantissa, exponent = '0'] = String(value).split('e');
+  const [whole, fraction = ''] = mantissa.split('.');
+  return { coefficient: BigInt(whole + fraction), exponent: Number(exponent) - fraction.length };
 }
 
 export function groupByCell(measurements, grid) {

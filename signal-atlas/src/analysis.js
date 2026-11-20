@@ -21,7 +21,7 @@ export function analyze(files, rawBounds) {
   const periods = {};
   for (const period of PERIODS) {
     const summary = summarizeCells(groups, period);
-    const weakCells = summary.cells.filter(cell => cell.level === 'weak');
+    const weakCells = summary.cells.filter((cell) => cell.level === 'weak');
     const plan = planSites(candidates, weakCells, bounds.earth_radius_m);
     periods[period] = { ...summary, plan };
   }
@@ -29,13 +29,13 @@ export function analyze(files, rawBounds) {
   // Ответ жюри всегда относится ко всем суткам, независимо от периода на карте.
   const { cells, plan } = periods.all;
   const result = {
-    worst_cells: cells.slice(0, 3).map(cell => ({
+    worst_cells: cells.slice(0, 3).map((cell) => ({
       cell_id: cell.id,
-      rsrp_median: cell.rsrp
+      rsrp_median: cell.rsrp,
     })),
     best_candidates: plan.best.ids,
     dropped_rows: total - accepted.length,
-    covered_weak_cells: plan.best.count
+    covered_weak_cells: plan.best.count,
   };
 
   return { bounds, towers, candidates, dropped, total, periods, result };

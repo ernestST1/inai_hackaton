@@ -1,7 +1,8 @@
 import { parseCsv } from './csv.js';
 
 const DECIMAL_NUMBER = /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:e[+-]?\d+)?$/i;
-const ISO_TIMESTAMP = /^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)(?::(\d\d)(\.\d+)?)?(Z|[+-]\d\d:?\d\d)?$/i;
+const ISO_TIMESTAMP =
+  /^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)(?::(\d\d)(\.\d+)?)?(Z|[+-]\d\d:?\d\d)?$/i;
 const BISHKEK_OFFSET_MS = 6 * 60 * 60 * 1000;
 const MIN_RSRP_DBM = -140;
 const MAX_RSRP_DBM = -44;
@@ -25,7 +26,8 @@ function parseTimestamp(text) {
   if (+hour >= 24 || +minute >= 60 || +second >= 60) return NaN;
   const date = [year, month, day].join('-');
   const time = [hour, minute, second].join(':');
-  return Date.parse(date + 'T' + time + fraction + zone);
+  const offset = zone.replace(/^([+-]\d{2})(\d{2})$/, '$1:$2');
+  return Date.parse(date + 'T' + time + fraction + offset);
 }
 
 export function timeInfo(text) {
@@ -36,7 +38,9 @@ export function timeInfo(text) {
 }
 
 export function cleanMeasurements(csv, bounds) {
-  const records = parseCsv(csv, ['lat', 'lon', 'rsrp_dbm', 'timestamp'], 'measurements.csv');
+  const records = parseCsv(csv, ['lat', 'lon', 'rsrp_dbm', 'timestamp'], 'measurements.csv', {
+    recoverRows: true,
+  });
   const dropped = { malformed: 0, signal: 0, outside: 0, timestamp: 0, duplicate: 0 };
   const accepted = [];
   const seen = new Set();
