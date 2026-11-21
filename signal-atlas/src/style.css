@@ -547,6 +547,28 @@ input[type='checkbox'] {
 .zoom-group button + button {
   border-top: 1px solid #d9e1d9;
 }
+.map-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  padding: 7px 15px;
+  background: #f6f9f7;
+  border-bottom: 1px solid var(--line);
+  color: #52685f;
+}
+.map-source > a {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.map-source a {
+  color: var(--teal);
+  text-underline-offset: 2px;
+}
+.map-source small {
+  font-size: 0.74rem;
+}
 .map-legend {
   display: flex;
   align-items: center;
@@ -857,14 +879,10 @@ input[type='checkbox'] {
   width: 12px;
   height: 12px;
 }
-.leaflet-container .leaflet-control-attribution,
 .leaflet-control-scale-line {
   font:
     10px/1.35 Inter,
     sans-serif;
-}
-.leaflet-control-attribution a {
-  color: #526c61;
 }
 .leaflet-popup-content {
   font:

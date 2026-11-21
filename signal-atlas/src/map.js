@@ -36,13 +36,9 @@ export class CoverageMap {
       maxBoundsViscosity: 1,
       bounceAtZoomLimits: false,
       preferCanvas: true,
-      attributionControl: true,
+      attributionControl: false, // Источник и лицензия всегда видны под картой.
     });
     const map = this.map;
-    map.attributionControl.setPrefix(false);
-    map.attributionControl.addAttribution(
-      '<a href="https://openfreemap.org/">OpenFreeMap</a> · <a href="https://openmaptiles.org/">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    );
     this.viewport = new MapViewport(map, JSON.parse(get('basemap-data').textContent));
     map.createPane('heatSurface').style.zIndex = 350;
     L.control.scale({ imperial: false, maxWidth: 95, position: 'bottomleft' }).addTo(map);
@@ -71,6 +67,10 @@ export class CoverageMap {
     });
     menu.onchange = (event) => {
       if (event.target.id === 'online-map') return;
+      if (event.target.id === 'layer-signal') {
+        this.drawSurface();
+        return;
+      }
       if (event.target.id === 'layer-radius') this.drawSurface();
       this.drawMarkers();
     };
@@ -89,20 +89,24 @@ export class CoverageMap {
   }
   setMode(mode) {
     this.mode = mode;
+    get('layer-signal').checked = true;
     this.drawSurface();
   }
   drawSurface() {
     this.surface.clearLayers();
     this.shapes.clear();
+    const visible = get('layer-signal').checked;
+    const legend = get('coverage-legend');
+    const showCoverage = get('layer-radius').checked;
+    legend.hidden = !visible || !showCoverage;
+    get('signal-legend').hidden = !visible;
+    if (!visible) return;
     const heat = this.mode === 'heat';
     if (heat) {
       this.heat ||= heatOverlays(this.period.cells, this.grid);
       this.surface.addLayer(this.heat);
     }
     const { dLat, dLon } = this.grid;
-    const showCoverage = get('layer-radius').checked;
-    const legend = get('coverage-legend');
-    legend.hidden = !showCoverage;
     if (showCoverage) {
       const { shared, best, greedy } = this.coverage.counts;
       legend.innerHTML = `<strong>Охват слабых ячеек</strong>
@@ -126,7 +130,7 @@ export class CoverageMap {
         dashArray: outline === 'greedy' ? '4 2' : null,
         fill: true,
         fillColor: colors[c.level],
-        fillOpacity: heat ? 0 : 0.63,
+        fillOpacity: heat ? 0 : 0.5,
       });
       shape.bindPopup(cellPopup(c, showCoverage ? hit?.[this.algorithm] : undefined));
       this.shapes.set(c.id, shape);
@@ -225,6 +229,10 @@ export class CoverageMap {
       }
   }
   focusCell(id) {
+    if (!get('layer-signal').checked) {
+      get('layer-signal').checked = true;
+      this.drawSurface();
+    }
     const shape = this.shapes.get(id);
     if (shape) {
       this.map.setView(shape.getBounds().getCenter(), Math.max(16, this.map.getZoom()), {
@@ -234,6 +242,7 @@ export class CoverageMap {
     }
   }
   showPair() {
+    get('layer-signal').checked = true;
     get('layer-radius').checked = get('layer-sites').checked = true;
     this.drawSurface();
     this.drawMarkers();

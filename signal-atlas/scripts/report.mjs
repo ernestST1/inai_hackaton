@@ -48,7 +48,7 @@ export async function buildReport(data, source) {
     fontLicense,
   ] = await Promise.all([
     read('src/page.html'),
-    uri('assets/bishkek.svg', 'image/svg+xml'),
+    uri('assets/bishkek.png', 'image/png'),
     read('vendor/leaflet.js'),
     read('vendor/leaflet.css'),
     read('src/style.css'),

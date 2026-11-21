@@ -9,6 +9,7 @@
   "scripts": {
     "demo": "node scripts/demo.mjs",
     "build": "node scripts/build.mjs",
+    "basemap": "node scripts/basemap.mjs",
     "analyze": "node scripts/analyze.mjs",
     "test": "node --test",
     "format": "prettier --write \"src/*.js\" src/style.css src/page.html \"scripts/*.mjs\"",
@@ -21,9 +22,7 @@
     "endOfLine": "auto"
   },
   "devDependencies": {
-    "@mapbox/vector-tile": "2.0.4",
     "esbuild": "0.25.12",
-    "pbf": "4.0.1",
     "prettier": "3.6.2"
   }
 }

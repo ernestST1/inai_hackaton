@@ -150,6 +150,7 @@ document.querySelectorAll('[data-algorithm]').forEach(
   (button) =>
     (button.onclick = () => {
       algorithm = button.dataset.algorithm;
+      get('layer-signal').checked = true;
       get('layer-radius').checked = true;
       get('layer-sites').checked = true;
       renderOverview();
@@ -255,6 +256,7 @@ get('import-form').onsubmit = async (e) => {
     mode = 'grid';
     algorithm = 'best';
     get('layer-radius').checked = false;
+    get('layer-signal').checked = true;
     history.replaceState(null, '', '#overview');
     route(true);
     get('import-dialog').close();

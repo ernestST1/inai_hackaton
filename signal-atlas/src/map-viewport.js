@@ -1,13 +1,15 @@
-// Границы встроенного SVG в пикселях Web Mercator на уровне 13.
+import { BISHKEK_BBOX, WMS_ENDPOINT, WMS_LAYER } from './basemap.js';
+
 const BASE_ZOOM = 13;
-const TILE_SIZE = 256;
-const BASE_NORTHWEST = [5792, 3013];
-const BASE_SOUTHEAST = [5795, 3016];
 const WORLD_MIN_ZOOM = 2;
 
-function streetBounds(map) {
-  const corner = (tile) => map.unproject(L.point(tile).multiplyBy(TILE_SIZE), BASE_ZOOM);
-  return L.latLngBounds(corner(BASE_NORTHWEST), corner(BASE_SOUTHEAST));
+function streetBounds() {
+  const [west, south, east, north] = BISHKEK_BBOX;
+  const projection = L.CRS.EPSG3857;
+  return L.latLngBounds(
+    projection.unproject(L.point(west, south)),
+    projection.unproject(L.point(east, north)),
+  );
 }
 
 // Масштаб Leaflet удваивает стороны карты при каждом целом шаге.
@@ -24,13 +26,24 @@ export function zoomForExtent(view, extent, fill, snap) {
 export class MapViewport {
   constructor(map, image) {
     this.map = map;
-    const bounds = streetBounds(map);
+    const bounds = streetBounds();
     // Небольшой запас компенсирует округление координат Leaflet до пикселя.
     this.streetFrame = bounds.pad(-0.003);
     L.imageOverlay(image, bounds, { pane: 'tilePane', alt: 'Улицы, парки и реки Бишкека' }).addTo(
       map,
     );
-    this.tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+    this.tiles = L.tileLayer.wms(WMS_ENDPOINT, {
+      layers: WMS_LAYER,
+      format: 'image/png',
+      version: '1.1.1',
+      maxNativeZoom: 14,
+      maxZoom: 19,
+    });
+    const osmLink = document.getElementById('osm-view');
+    map.on('moveend', () => {
+      const center = map.getCenter().wrap();
+      osmLink.href = `https://www.openstreetmap.org/#map=${Math.round(map.getZoom())}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
+    });
     this.onlineInput = document.getElementById('online-map');
     this.zoomIn = document.getElementById('zoom-in');
     this.zoomOut = document.getElementById('zoom-out');

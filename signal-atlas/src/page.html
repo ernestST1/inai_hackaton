@@ -124,6 +124,10 @@
                 <fieldset id="layer-menu" hidden>
                   <legend>Слои карты</legend>
                   <label>
+                    <input type="checkbox" id="layer-signal" checked />
+                    Покрытие сигнала
+                  </label>
+                  <label>
                     <input type="checkbox" id="layer-towers" checked />
                     Базовые станции
                   </label>
@@ -145,7 +149,7 @@
                   </label>
                   <label class="basemap-option">
                     <input type="checkbox" id="online-map" />
-                    Онлайн-подложка OSM
+                    Улицы за пределами района (онлайн)
                   </label>
                 </fieldset>
               </div>
@@ -164,7 +168,35 @@
                 </button>
               </div>
             </div>
-            <div class="map-legend">
+            <div class="map-source">
+              <a
+                id="osm-view"
+                href="https://www.openstreetmap.org/#map=14/42.858/74.585"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Открыть в OpenStreetMap
+              </a>
+              <small>
+                ©
+                <a
+                  href="https://www.openstreetmap.org/copyright"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  OpenStreetMap contributors
+                </a>
+                , © Natural Earth Data, © GEBCO Bathymetric Compilation Group 2019, ©
+                <a
+                  href="https://terrestris.de/produkte/free-osm-wms/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  terrestris
+                </a>
+              </small>
+            </div>
+            <div class="map-legend" id="signal-legend">
               <strong>RSRP, дБм</strong>
               <span>
                 <b class="swatch strong"></b>

@@ -578,15 +578,21 @@
     return layer;
   }
 
+  // src/basemap.js
+  var BISHKEK_BBOX = [8296780798186e-6, 5283327395071e-6, 8311456707617e-6, 5298003304502e-6];
+  var WMS_ENDPOINT = "https://ows.terrestris.de/osm/service";
+  var WMS_LAYER = "OSM-WMS";
+
   // src/map-viewport.js
   var BASE_ZOOM = 13;
-  var TILE_SIZE = 256;
-  var BASE_NORTHWEST = [5792, 3013];
-  var BASE_SOUTHEAST = [5795, 3016];
   var WORLD_MIN_ZOOM = 2;
-  function streetBounds(map2) {
-    const corner = (tile) => map2.unproject(L.point(tile).multiplyBy(TILE_SIZE), BASE_ZOOM);
-    return L.latLngBounds(corner(BASE_NORTHWEST), corner(BASE_SOUTHEAST));
+  function streetBounds() {
+    const [west, south, east, north] = BISHKEK_BBOX;
+    const projection = L.CRS.EPSG3857;
+    return L.latLngBounds(
+      projection.unproject(L.point(west, south)),
+      projection.unproject(L.point(east, north))
+    );
   }
   function zoomForExtent(view, extent, fill, snap) {
     const ratioX = view.x / extent.x;
@@ -598,12 +604,23 @@
   var MapViewport = class {
     constructor(map2, image) {
       this.map = map2;
-      const bounds = streetBounds(map2);
+      const bounds = streetBounds();
       this.streetFrame = bounds.pad(-3e-3);
       L.imageOverlay(image, bounds, { pane: "tilePane", alt: "Улицы, парки и реки Бишкека" }).addTo(
         map2
       );
-      this.tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
+      this.tiles = L.tileLayer.wms(WMS_ENDPOINT, {
+        layers: WMS_LAYER,
+        format: "image/png",
+        version: "1.1.1",
+        maxNativeZoom: 14,
+        maxZoom: 19
+      });
+      const osmLink = document.getElementById("osm-view");
+      map2.on("moveend", () => {
+        const center = map2.getCenter().wrap();
+        osmLink.href = `https://www.openstreetmap.org/#map=${Math.round(map2.getZoom())}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
+      });
       this.onlineInput = document.getElementById("online-map");
       this.zoomIn = document.getElementById("zoom-in");
       this.zoomOut = document.getElementById("zoom-out");
@@ -690,13 +707,10 @@
         maxBoundsViscosity: 1,
         bounceAtZoomLimits: false,
         preferCanvas: true,
-        attributionControl: true
+        attributionControl: false
+        // Источник и лицензия всегда видны под картой.
       });
       const map2 = this.map;
-      map2.attributionControl.setPrefix(false);
-      map2.attributionControl.addAttribution(
-        '<a href="https://openfreemap.org/">OpenFreeMap</a> · <a href="https://openmaptiles.org/">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      );
       this.viewport = new MapViewport(map2, JSON.parse(get("basemap-data").textContent));
       map2.createPane("heatSurface").style.zIndex = 350;
       L.control.scale({ imperial: false, maxWidth: 95, position: "bottomleft" }).addTo(map2);
@@ -724,6 +738,10 @@
       });
       menu.onchange = (event) => {
         if (event.target.id === "online-map") return;
+        if (event.target.id === "layer-signal") {
+          this.drawSurface();
+          return;
+        }
         if (event.target.id === "layer-radius") this.drawSurface();
         this.drawMarkers();
       };
@@ -741,20 +759,24 @@
     }
     setMode(mode2) {
       this.mode = mode2;
+      get("layer-signal").checked = true;
       this.drawSurface();
     }
     drawSurface() {
       this.surface.clearLayers();
       this.shapes.clear();
+      const visible = get("layer-signal").checked;
+      const legend = get("coverage-legend");
+      const showCoverage = get("layer-radius").checked;
+      legend.hidden = !visible || !showCoverage;
+      get("signal-legend").hidden = !visible;
+      if (!visible) return;
       const heat = this.mode === "heat";
       if (heat) {
         this.heat ||= heatOverlays(this.period.cells, this.grid);
         this.surface.addLayer(this.heat);
       }
       const { dLat, dLon } = this.grid;
-      const showCoverage = get("layer-radius").checked;
-      const legend = get("coverage-legend");
-      legend.hidden = !showCoverage;
       if (showCoverage) {
         const { shared, best, greedy } = this.coverage.counts;
         legend.innerHTML = `<strong>Охват слабых ячеек</strong>
@@ -778,7 +800,7 @@
           dashArray: outline === "greedy" ? "4 2" : null,
           fill: true,
           fillColor: colors[c.level],
-          fillOpacity: heat ? 0 : 0.63
+          fillOpacity: heat ? 0 : 0.5
         });
         shape.bindPopup(cellPopup(c, showCoverage ? hit?.[this.algorithm] : void 0));
         this.shapes.set(c.id, shape);
@@ -855,6 +877,10 @@
         }
     }
     focusCell(id) {
+      if (!get("layer-signal").checked) {
+        get("layer-signal").checked = true;
+        this.drawSurface();
+      }
       const shape = this.shapes.get(id);
       if (shape) {
         this.map.setView(shape.getBounds().getCenter(), Math.max(16, this.map.getZoom()), {
@@ -864,6 +890,7 @@
       }
     }
     showPair() {
+      get("layer-signal").checked = true;
       get("layer-radius").checked = get("layer-sites").checked = true;
       this.drawSurface();
       this.drawMarkers();
@@ -1184,6 +1211,7 @@
   document.querySelectorAll("[data-algorithm]").forEach(
     (button) => button.onclick = () => {
       algorithm = button.dataset.algorithm;
+      get2("layer-signal").checked = true;
       get2("layer-radius").checked = true;
       get2("layer-sites").checked = true;
       renderOverview();
@@ -1264,6 +1292,7 @@
       mode = "grid";
       algorithm = "best";
       get2("layer-radius").checked = false;
+      get2("layer-signal").checked = true;
       history.replaceState(null, "", "#overview");
       route(true);
       get2("import-dialog").close();
