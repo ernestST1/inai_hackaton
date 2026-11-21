@@ -1,0 +1,28 @@
+{
+  "name": "efir-coverage-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "demo": "node scripts/demo.mjs",
+    "build": "node scripts/build.mjs",
+    "basemap": "node scripts/basemap.mjs",
+    "analyze": "node scripts/analyze.mjs",
+    "test": "node --test",
+    "format": "prettier --write \"src/*.js\" src/style.css src/page.html \"scripts/*.mjs\"",
+    "format:check": "prettier --check \"src/*.js\" src/style.css src/page.html \"scripts/*.mjs\""
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 100,
+    "htmlWhitespaceSensitivity": "ignore",
+    "endOfLine": "auto"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "prettier": "3.6.2"
+  }
+}
